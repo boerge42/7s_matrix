@@ -5,14 +5,15 @@
 # Uwe Berger, 2013, 2023
 #
 #
-# ...ein TCP/IP-Socket-Client fuer
-# 7s_matrix.tcl
+# ...ein Test-Client fuer 7s_matrix.tcl...
+# 
+# --> Test Server-Kommando: set_bitmap
+#
 #
 # ---------
 # Have fun!
 #
 # *************************************************
-
 
 set gvar(host) "localhost"
 set gvar(port) 4242
@@ -70,7 +71,7 @@ set p 1
 for {set x 0} {$x < $dx} {incr x} {
 	for {set y 0} {$y < $dy} {incr y} {
 		if {[expr $x % 9] == 0} {
-			set p 1
+			set p 9
 		} else {
 			set p 0
 		}

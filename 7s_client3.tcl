@@ -7,7 +7,7 @@
 #
 # ...ein Test-Client fuer 7s_matrix.tcl...
 # 
-# --> Test Server-Kommando: set_pixel
+# --> Test Server-Kommando: set_bitmap_10c
 #
 #
 # ---------
@@ -43,7 +43,6 @@ proc send_cmd {cmd} {
 	flush $gvar(sock) 
 }
 
-
 # **************************************
 # **************************************
 # **************************************
@@ -65,14 +64,23 @@ send_cmd clear
 set dx [expr $gvar(digit_px)]
 set dy [expr $gvar(digit_py)]
 
+# Bitmap generieren...
+# ...Header --> Dimension, Anzahl Farben, Farben...
+set header "$dx $dy 10 #141414 #2e2e2e #474747 #616161 #7a7a7a #949494 #adadad #c7c7c7 #e0e0e0 #fafafa " 
 
-# ein paar Striche
+# ...irgend ein markantes Bitmap generieren
+set bitmap {}
 for {set x 0} {$x < $dx} {incr x} {
-	# diagonal
-    send_cmd [list set_pixel $x $x 9]
-    send_cmd [list set_pixel $x [expr $dy - $x] 9]
-	# waagerecht
-    send_cmd [list set_pixel $x [expr $dy / 2] 9]
-	# senkrecht
-    send_cmd [list set_pixel [expr $dy / 2] $x 9]
+	for {set y 0} {$y < $dy} {incr y} {
+		set p [expr $y % 10]
+		set bitmap [lappend bitmap $p]
+	}
 }
+set bitmap [join $bitmap ""]
+
+# ...Header und Bitmap zusammensetzen
+set bmp [list $header $bitmap]
+set bmp [join $bmp ""]
+
+# ... und senden
+send_cmd [list set_bitmap_10c $bmp]

@@ -1,18 +1,27 @@
-# *************************************************
+# **********************************************************************
 #
-#    7-Segment-Matrix
-# ======================
-# Uwe Berger; 2013, 2023
+#  7-Segment-Matrix-Server
+# =========================
+#  Uwe Berger; 2013, 2023
 #
+#
+# zulaessige Kommandos (via TCP/IP):
+# ----------------------------------
+#   clear clear ...
+#   get_xy get_xy ...
+#   set_pixel ...
+#   set_bitmap ...
+#   set_bitmap_10c ...
+#
+#   ...fuer Details lese/verstehe TCL-Code!
 #
 #
 # ---------
 # Have fun!
 #
-# *************************************************
+# **********************************************************************
 
 set gvar(server_port)	4242
-
 
 # Geometrie eines Digit
 set gvar(segm_length)	9
@@ -24,8 +33,10 @@ set gvar(digit_height)	[expr 2*$gvar(bd)+2*$gvar(segm_length)+4*$gvar(segm_dx)]
 
 # Farben (Fenster, Digit)
 set gvar(win_bg) 		black
-set gvar(segm_off)	 	gray8
-set gvar(segm_on)	 	yellow
+
+set gvar(segm_color)    {gray8 gray18 gray28 gray38 gray48 gray58 gray68 gray78 gray88 gray98}
+set gvar(segm_off)	 	[lindex $gvar(segm_color) 0]
+set gvar(segm_on)	 	[lindex $gvar(segm_color) end]
 
 # Geometrie Fenster
 set gvar(digit_dx)		50
@@ -36,11 +47,11 @@ set gvar(digit_bd)		[expr $gvar(segm_length)/2]
 set gvar(win_dx)		[expr $gvar(digit_dx)*$gvar(digit_width)+($gvar(digit_dx)+1)*$gvar(digit_bd)]
 set gvar(win_dy)		[expr $gvar(digit_dy)*$gvar(digit_height)+($gvar(digit_dy)+1)*$gvar(digit_bd)]
 
-# **************************************
+# **********************************************************************
 #  7s-Digit zeichnen
 #
 #  7-Segment-     relative Koordinate
-#  Digit           in einem Digit
+#  Digit          in einem Digit
 #
 #                       <-x->
 #    aaa             |  0   1
@@ -51,7 +62,7 @@ set gvar(win_dy)		[expr $gvar(digit_dy)*$gvar(digit_height)+($gvar(digit_dy)+1)*
 #   e   c         | 3|  e   c
 #    ddd  p       v 4|  d   p
 #    
-# **************************************
+#
 proc 7s_init {x y r c} {
 	global gvar
 	# Index des Digits berechnen
@@ -131,7 +142,7 @@ proc 7s_init {x y r c} {
 						-tags [list digit_14$digit_idx digit]
 }
 
-# **************************************
+# **********************************************************************
 proc gui_init {} {
 	global gvar
 	# Fenster definieren/zeichnen
@@ -157,29 +168,8 @@ proc accept {sock addr port} {
 	puts "-> Accept connection: $addr/$port\n"
 }                                   
 
-# **************************************
-proc get_xy {sock} {
-	global gvar
-	puts "--> execute command get_xy"
-	puts $sock "set_xy $gvar(digit_px) $gvar(digit_py)"
-	flush $sock
-}	
-
-# **************************************
-proc clear {sock} {
-	global gvar
-	.matrix itemconfigure digit -fill $gvar(segm_off)
-}
-
-# **************************************
-proc set_pixel {x y color sock} {
-	global gvar
-	# color
-	if {$color == 0} {
-		set color $gvar(segm_off)
-	} else {
-		set color $gvar(segm_on)
-	}
+# **********************************************************************
+proc set_pixel_intern {x y color color_list} {
 	# Berechnung Digit
 	set r [expr $y / 5]
 	set c [expr $x / 2]
@@ -189,27 +179,7 @@ proc set_pixel {x y color sock} {
 	set dx [expr $x % 2]
 	set dy [expr $y % 5]
 	# berechnetes Segment nach color setzen 
-	.matrix itemconfigure digit_$dx$dy$digit_idx -fill $color
-}
-
-# ******************************************
-# ...es wird erwartet, dass das uebergebene 
-# Bitmap die Groesse der maximalen Zeichen-
-# flaeche hat und zeilenweise aufgebaut ist
-#
-proc set_bitmap {bmp sock} {
-	global gvar
-	set px 0
-	set py 0
-	foreach p [split $bmp ""] {
-		if {$px >= $gvar(digit_px)} {
-			incr py
-			set px 0
-		}
-		# puts "px: $px; py: $py; p: $p"
-		set_pixel $px $py $p $sock
-		incr px
-	}
+	.matrix itemconfigure digit_$dx$dy$digit_idx -fill [lindex $color_list $color]
 }
 
 # **************************************
@@ -232,6 +202,95 @@ proc receive {sock addr port} {
 	}
 }
 
+# **********************************************************************
+# Server-Kommando --> Dimension der Matrix zurueckgeben
+#
+proc get_xy {sock} {
+	global gvar
+	puts "--> execute command get_xy"
+	puts $sock "set_xy $gvar(digit_px) $gvar(digit_py)"
+	flush $sock
+}	
+
+# **********************************************************************
+# Server-Kommando --> Matrix loeschen
+#
+proc clear {sock} {
+	global gvar
+	.matrix itemconfigure digit -fill $gvar(segm_off)
+}
+
+
+# **********************************************************************
+# Server-Kommando --> ein Pixel innerhalb der Matrix setzen
+#
+proc set_pixel {x y color sock} {
+	global gvar
+	set_pixel_intern $x $y $color $gvar(segm_color)
+}
+
+# **********************************************************************
+# Server-Kommando -> Bitmap (mit intern definierten Farbwerten) ausgeben
+#
+# ...es wird erwartet, dass das uebergebene Bitmap die Groesse der 
+# maximalen Zeichenflaeche hat und zeilenweise aufgebaut ist...
+#
+proc set_bitmap {bmp sock} {
+	global gvar
+	set px 0
+	set py 0
+	foreach p [split $bmp ""] {
+		if {$px >= $gvar(digit_px)} {
+			incr py
+			set px 0
+		}
+		# puts "px: $px; py: $py; p: $p"
+		set_pixel_intern $px $py $p $gvar(segm_color)
+		incr px
+	}
+}
+
+# **********************************************************************
+# Server-Kommando --> Bitmap mit uebergebenen Farbwerten ausgeben
+#
+# Bildformat (Parameter >bmp<):
+# >bmp<: "dx dy color_count color_value color_value ... bitmap......." 
+# Index:  0  1  2           3           4               3+color_count
+#
+# bitmap enthaelt pro Pixel einen Wert zwischen 0 und count_color-1, 
+# welcher dem entsprechenden Listen-Index der Farbewerte (color_value) 
+# entspricht...
+#
+# Als Dimension von bitmap werden die Werte dx/dy aus den Parameter
+# >bmp< angenommen und entsprechend ausgewertet/angewendet.
+#
+proc set_bitmap_10c {bmp sock} {
+	global gvar
+	# Parameter aus Message ermitteln...
+	set v [split $bmp " "]
+	set dx [lindex $v 0]
+	set dy [lindex $v 1]
+	set cc [lindex $v 2]
+	# ...Farbpalette
+	set bmp [lindex $v [expr 3 + $cc]]
+	set colors {}
+	for {set i 0} {$i < $cc} {incr i} {
+		set colors [lappend colors [lindex $v [expr 3 + $i]]]
+	}
+	# ...und Pixel mit entsprechender Farbe ausgeben
+	set px 0
+	set py 0
+	foreach p [split $bmp ""] {
+		if {$px >= $dx} {
+			incr py
+			set px 0
+		}
+		#puts "px: $px; py: $py; p: $p"
+		set_pixel_intern $px $py $p $colors
+		incr px
+	}
+}
+
 # **************************************
 # **************************************
 # **************************************
@@ -244,6 +303,7 @@ $si alias clear clear
 $si alias get_xy get_xy
 $si alias set_pixel set_pixel
 $si alias set_bitmap set_bitmap
+$si alias set_bitmap_10c set_bitmap_10c
 
 
 # TCP/IP-Kommunikationskanal oeffnen und dort lauschen
