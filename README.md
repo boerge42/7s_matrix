@@ -12,7 +12,7 @@ Der hier vorgestellte Simulator (**7s_matrix.tcl**) ist ein, in TCL geschriebene
 * set_pixel
 * set_bitmap_xpm
 
-Was diese Kommandos (mit ihren entsprechenden Parametern) bewirken, ist dem Quelltext von **7s_matrix.tcl** zu entnehmen!
+Was diese Kommandos (mit ihren entsprechenden Parametern) bewirken, ist dem Quelltext von **7s_matrix.tcl** bzw. den [Slides](ascii_art.pdf) (ab Seite 12) zu entnehmen!
 
 
 Zum Testen des Matrix-Servers wurden einige Clients (mögliche Aufrufparameter siehe Quelltext) implementiert:
