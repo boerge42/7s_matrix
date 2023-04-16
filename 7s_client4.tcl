@@ -7,7 +7,7 @@
 #
 # ...ein Test-Client fuer 7s_matrix.tcl...
 # 
-# --> Test Server-Kommando: set_pixel
+# --> Test Server-Kommando: set_bitmap_xpm
 #
 # --> moegliche Aufruf-Parameter: ... -h
 #
@@ -16,6 +16,7 @@
 #
 # *************************************************
 
+source xpm2image.tcl
 source getopt.tcl
 
 set gvar(host) "localhost"
@@ -46,17 +47,17 @@ proc send_cmd {cmd} {
 	flush $gvar(sock) 
 }
 
-
 # **************************************
 # **************************************
 # **************************************
 
 # CMD-Options
 if {[getopt argv -h]} {
-	puts "$argv0 \[-version <matrix-version>\]"
+	puts "$argv0 \[-version <matrix-version>\] \[-xpm <xpm-picture-filename>\]"
 	exit
 }
 getopt argv -version version 2
+getopt argv -xpm xpm "uwe.xpm"
 
 # TCP/IP-Socket zum Server oeffnen
 set gvar(sock) [socket $gvar(host) $gvar(port)]
@@ -71,18 +72,7 @@ puts "--> $gvar(digit_px)x$gvar(digit_py)"
 # Display loeschen
 send_cmd clear
 
-# Dimension der Matrix ermitteln (in Pixel)
-set dx [expr $gvar(digit_px)]
-set dy [expr $gvar(digit_py)]
+set img [xpm-to-image $xpm]
 
-
-# ein paar Striche
-for {set x 0} {$x < $dx} {incr x} {
-	# diagonal
-    send_cmd [list set_pixel $version $x $x gray98]
-    send_cmd [list set_pixel $version $x [expr $dy - $x] gray98]
-	# waagerecht
-    send_cmd [list set_pixel $version $x [expr $dy / 2] gray98]
-	# senkrecht
-    send_cmd [list set_pixel $version [expr $dy / 2] $x gray98]
-}
+# ... und senden
+send_cmd [list set_bitmap_xpm $version $img]

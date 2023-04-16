@@ -9,11 +9,14 @@
 # 
 # --> Test Server-Kommando: set_bitmap_10c
 #
+# --> moegliche Aufruf-Parameter: ... -h
 #
 # ---------
 # Have fun!
 #
 # *************************************************
+
+source getopt.tcl
 
 set gvar(host) "localhost"
 set gvar(port) 4242
@@ -47,13 +50,20 @@ proc send_cmd {cmd} {
 # **************************************
 # **************************************
 
+# CMD-Options
+if {[getopt argv -h]} {
+	puts "$argv0 \[-version <matrix-version>\]"
+	exit
+}
+getopt argv -version version 2
+
 # TCP/IP-Socket zum Server oeffnen
 set gvar(sock) [socket $gvar(host) $gvar(port)]
 fconfigure $gvar(sock) -buffering line
 fileevent  $gvar(sock) readable [list receive $gvar(sock)]
 
 # Dimension der Matrix anfordern 
-send_cmd get_xy
+send_cmd [list get_xy $version]
 vwait gvar(digit_px)
 puts "--> $gvar(digit_px)x$gvar(digit_py)"
 
@@ -66,7 +76,7 @@ set dy [expr $gvar(digit_py)]
 
 # Bitmap generieren...
 # ...Header --> Dimension, Anzahl Farben, Farben...
-set header "$dx $dy 10 #141414 #2e2e2e #474747 #616161 #7a7a7a #949494 #adadad #c7c7c7 #e0e0e0 #fafafa " 
+set header "$dx\t$dy\t10\t0:#141414\t1:#2e2e2e\t2:#474747\t3:#616161\t4:#7a7a7a\t5:#949494\t6:#adadad\t7:#c7c7c7\t8:#e0e0e0\t9:#fafafa\t" 
 
 # ...irgend ein markantes Bitmap generieren
 set bitmap {}
@@ -83,4 +93,4 @@ set bmp [list $header $bitmap]
 set bmp [join $bmp ""]
 
 # ... und senden
-send_cmd [list set_bitmap_10c $bmp]
+send_cmd [list set_bitmap_xpm $version $bmp]

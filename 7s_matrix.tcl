@@ -7,11 +7,10 @@
 #
 # zulaessige Kommandos (via TCP/IP):
 # ----------------------------------
-#   clear clear ...
-#   get_xy get_xy ...
+#   clear ...
+#   get_xy ...
 #   set_pixel ...
-#   set_bitmap ...
-#   set_bitmap_10c ...
+#   set_bitmap_xpm ...
 #
 #   ...fuer Details lese/verstehe TCL-Code!
 #
@@ -43,25 +42,47 @@ set gvar(digit_dx)		50
 set gvar(digit_dy)		20
 set gvar(digit_px)		[expr $gvar(digit_dx) * 2]
 set gvar(digit_py)		[expr $gvar(digit_dy) * 5]
+set gvar(digit_v1_px)	[expr $gvar(digit_dx) * 3]
+set gvar(digit_v1_py)	[expr $gvar(digit_dy) * 5]
 set gvar(digit_bd)		[expr $gvar(segm_length)/2]
 set gvar(win_dx)		[expr $gvar(digit_dx)*$gvar(digit_width)+($gvar(digit_dx)+1)*$gvar(digit_bd)]
 set gvar(win_dy)		[expr $gvar(digit_dy)*$gvar(digit_height)+($gvar(digit_dy)+1)*$gvar(digit_bd)]
 
 # **********************************************************************
+#  intern
+#
 #  7s-Digit zeichnen
 #
-#  7-Segment-     relative Koordinate
-#  Digit          in einem Digit
+#  7-Segment-     relative Koordinate eines
+#  Digit          Segments in einem Digit
+#                 
+#  ----------------------------------------
+#  Version 1
+#  ----------------------------------------
+#  
+#                  \x|  0   1   2
+#    aaa           y\|  
+#   f   b         ---+------------   
+#   f   b          0 |      a
+#    ggg           1 |  f       b
+#   e   c          2 |      g
+#   e   c          3 |  e       c
+#    ddd  p        4 |      d   
 #
-#                       <-x->
-#    aaa             |  0   1
+#  ----------------------------------------
+#  Version 2
+#  ----------------------------------------
+#
+#                  \x|  0   1
+#    aaa           y\|  
 #   f   b         ---+--------   
-#   f   b         ^ 0|  a
-#    ggg          | 1|  f   b
-#   e   c         y 2|  g
-#   e   c         | 3|  e   c
-#    ddd  p       v 4|  d   p
+#   f   b          0 |  a
+#    ggg           1 |  f   b
+#   e   c          2 |  g
+#   e   c          3 |  e   c
+#    ddd  p        4 |  d   p
 #    
+#  ----------------------------------------
 #
 proc 7s_init {x y r c} {
 	global gvar
@@ -76,7 +97,7 @@ proc 7s_init {x y r c} {
 						-caps round\
 						-width $gvar(segm_width)\
 						-fill $gvar(segm_off)\
-						-tags [list digit_00$digit_idx digit]
+						-tags [list digit_00$digit_idx digitv1_10$digit_idx digit]
 	# Segment g
 	.matrix create line	[expr $x + 2 * $gvar(bd) + $gvar(segm_dx)]\
 						[expr $y + $gvar(bd) + $gvar(segm_length) + 2* $gvar(segm_dx)]\
@@ -85,7 +106,7 @@ proc 7s_init {x y r c} {
 						-caps round\
 						-width $gvar(segm_width)\
 						-fill $gvar(segm_off)\
-						-tags [list digit_02$digit_idx digit]
+						-tags [list digit_02$digit_idx digitv1_12$digit_idx digit]
 	# Segment d
 	.matrix create line	[expr $x + 1 * $gvar(bd) + $gvar(segm_dx)]\
 						[expr $y + $gvar(bd) + 2 * $gvar(segm_length) + 4* $gvar(segm_dx)]\
@@ -94,7 +115,7 @@ proc 7s_init {x y r c} {
 						-caps round\
 						-width $gvar(segm_width)\
 						-fill $gvar(segm_off)\
-						-tags [list digit_04$digit_idx digit]
+						-tags [list digit_04$digit_idx digitv1_14$digit_idx digit]
 	# Segment b
 	.matrix create line	[expr $x + 3 * $gvar(bd) + $gvar(segm_length) + 2 * $gvar(segm_dx)]\
 						[expr $y + $gvar(bd) + $gvar(segm_dx)]\
@@ -103,7 +124,7 @@ proc 7s_init {x y r c} {
 						-caps round\
 						-width $gvar(segm_width)\
 						-fill $gvar(segm_off)\
-						-tags [list digit_11$digit_idx digit]
+						-tags [list digit_11$digit_idx digitv1_21$digit_idx digit]
 	# Segment f
 	.matrix create line	[expr $x + 3 * $gvar(bd)]\
 						[expr $y + $gvar(bd) + $gvar(segm_dx)]\
@@ -112,7 +133,7 @@ proc 7s_init {x y r c} {
 						-caps round\
 						-width $gvar(segm_width)\
 						-fill $gvar(segm_off)\
-						-tags [list digit_01$digit_idx digit]
+						-tags [list digit_01$digit_idx digitv1_01$digit_idx digit]
 	# Segment c
 	.matrix create line	[expr $x + 2 * $gvar(bd) + $gvar(segm_length) + 2 * $gvar(segm_dx) - $gvar(segm_dx)/4]\
 						[expr $y + $gvar(bd) + $gvar(segm_length) + 3 * $gvar(segm_dx)]\
@@ -121,7 +142,7 @@ proc 7s_init {x y r c} {
 						-caps round\
 						-width $gvar(segm_width)\
 						-fill $gvar(segm_off)\
-						-tags [list digit_13$digit_idx digit]
+						-tags [list digit_13$digit_idx digitv1_23$digit_idx digit]
 	# Segment e
 	.matrix create line	[expr $x + 2 * $gvar(bd) - $gvar(segm_dx)/4]\
 						[expr $y + $gvar(bd) + $gvar(segm_length) + 3 * $gvar(segm_dx)]\
@@ -130,7 +151,7 @@ proc 7s_init {x y r c} {
 						-caps round\
 						-width $gvar(segm_width)\
 						-fill $gvar(segm_off)\
-						-tags [list digit_03$digit_idx digit]
+						-tags [list digit_03$digit_idx digitv1_03$digit_idx digit]
 	# Segment p
 	.matrix create line	[expr $x + 3 * $gvar(bd) + $gvar(segm_length) + 2 * $gvar(segm_dx)]\
 						[expr $y + $gvar(bd) + 2 * $gvar(segm_length) + 4 * $gvar(segm_dx)]\
@@ -143,6 +164,8 @@ proc 7s_init {x y r c} {
 }
 
 # **********************************************************************
+# intern
+#
 proc gui_init {} {
 	global gvar
 	# Fenster definieren/zeichnen
@@ -162,6 +185,8 @@ proc gui_init {} {
 }
 
 # **************************************
+# intern
+#
 proc accept {sock addr port} {
 	fconfigure $sock -buffering line
 	fileevent  $sock readable [list receive $sock $addr $port]
@@ -169,20 +194,35 @@ proc accept {sock addr port} {
 }                                   
 
 # **********************************************************************
-proc set_pixel_intern {x y color color_list} {
+# intern
+#
+proc set_pixel_intern_xpm {version x y color} {
 	# Berechnung Digit
-	set r [expr $y / 5]
-	set c [expr $x / 2]
+	if {$version == 1} {
+		# Berechnung Digit
+		set r [expr $y / 5]
+		set c [expr $x / 3]
+		# Berechnung relative Koordinate im Digit
+		set dx [expr $x % 3]
+		set dy [expr $y % 5]
+	} else {
+		# Berechnung Digit
+		set r [expr $y / 5]
+		set c [expr $x / 2]
+		# Berechnung relative Koordinate im Digit
+		set dx [expr $x % 2]
+		set dy [expr $y % 5]
+	}
+	
 	# ...warum r und c zu oben vertauscht...?
 	set digit_idx [expr 100 * $c + $r]
-	# Berechnung relative Koordinate im Digit
-	set dx [expr $x % 2]
-	set dy [expr $y % 5]
-	# berechnetes Segment nach color setzen 
-	.matrix itemconfigure digit_$dx$dy$digit_idx -fill [lindex $color_list $color]
+	# berechnetes Segment nach color setzen
+	.matrix itemconfigure digit_$dx$dy$digit_idx -fill $color
 }
 
-# **************************************
+# **********************************************************************
+# intern
+#
 proc receive {sock addr port} {
 	global si
 	if {[eof $sock] || [catch {gets $sock line}]} {
@@ -194,10 +234,11 @@ proc receive {sock addr port} {
 		puts "-> Command receive: $cmd"
 		if {$line != ""} {
 			# Kommando im sicheren Interpreter ausfuehren
-			if {[catch {$si eval $line $sock}]} {
-				puts "--> cmd not secure!"
-			}
-			#eval $line $sock
+ 			if {[catch {$si eval $line $sock}]} {
+ 				puts "--> cmd not secure!"
+ 			}
+ 			# Debug (empf. Kommandos ohne sicheren Interpreter ausfuehren)
+			#~ eval $line $sock
 		}
 	}
 }
@@ -205,10 +246,13 @@ proc receive {sock addr port} {
 # **********************************************************************
 # Server-Kommando --> Dimension der Matrix zurueckgeben
 #
-proc get_xy {sock} {
+proc get_xy {version sock} {
 	global gvar
-	puts "--> execute command get_xy"
-	puts $sock "set_xy $gvar(digit_px) $gvar(digit_py)"
+	if {$version == 1} {
+		puts $sock "set_xy $gvar(digit_v1_px) $gvar(digit_v1_py)"
+	} else {
+		puts $sock "set_xy $gvar(digit_px) $gvar(digit_py)"
+	}
 	flush $sock
 }	
 
@@ -224,60 +268,61 @@ proc clear {sock} {
 # **********************************************************************
 # Server-Kommando --> ein Pixel innerhalb der Matrix setzen
 #
-proc set_pixel {x y color sock} {
-	global gvar
-	set_pixel_intern $x $y $color $gvar(segm_color)
+proc set_pixel {version x y color sock} {
+	set_pixel_intern_xpm $version $x $y $color
 }
 
 # **********************************************************************
-# Server-Kommando -> Bitmap (mit intern definierten Farbwerten) ausgeben
+# Server-Kommando --> ein Bitmap in der Matrix ausgeben
 #
-# ...es wird erwartet, dass das uebergebene Bitmap die Groesse der 
-# maximalen Zeichenflaeche hat und zeilenweise aufgebaut ist...
+# Format xpm:
+# -----------
+# >xpm<: "dx\tdy\tcolor_count\tcolor_value\tcolor_value\t...\tbitmap......." 
+# Index:  0   1   2            3            4                 3+color_count
 #
-proc set_bitmap {bmp sock} {
-	global gvar
-	set px 0
-	set py 0
-	foreach p [split $bmp ""] {
-		if {$px >= $gvar(digit_px)} {
-			incr py
-			set px 0
-		}
-		# puts "px: $px; py: $py; p: $p"
-		set_pixel_intern $px $py $p $gvar(segm_color)
-		incr px
-	}
-}
-
-# **********************************************************************
-# Server-Kommando --> Bitmap mit uebergebenen Farbwerten ausgeben
+# Trenner zwischen den einzelnen Parametern in xpm ist jeweils ein
+# Tabulatorzeichen (\t).
 #
-# Bildformat (Parameter >bmp<):
-# >bmp<: "dx dy color_count color_value color_value ... bitmap......." 
-# Index:  0  1  2           3           4               3+color_count
+# color_value besteht aus einem einstelligen Key und einem Farbwert, 
+# getrennt durch einen Doppelpunkt (:)
+# Beispiele:
+#    1:#2e2e2e
+#    a:#2e2e2e
+#    @:gray88
 #
-# bitmap enthaelt pro Pixel einen Wert zwischen 0 und count_color-1, 
-# welcher dem entsprechenden Listen-Index der Farbewerte (color_value) 
-# entspricht...
+# bitmap enthaelt pro Pixel einen Wert, der dem Key des entprechenden
+# Farbwertes entspricht (siehe color_value)
 #
 # Als Dimension von bitmap werden die Werte dx/dy aus den Parameter
-# >bmp< angenommen und entsprechend ausgewertet/angewendet.
+# >xpm< angenommen und entsprechend ausgewertet/angewendet.
 #
-proc set_bitmap_10c {bmp sock} {
-	global gvar
-	# Parameter aus Message ermitteln...
-	set v [split $bmp " "]
+# Die linke obere Punkt des Bitmaps entspricht immer dem Punkt 0, 0 der
+# Matrix
+#
+proc set_bitmap_xpm {version xpm sock} {
+	# Debug
+#	puts "--->>> set_bitmap_xpm"
+# 	foreach l [split $xpm "\t"] {
+# 		puts $l
+# 	}
+	set v [split $xpm "\t"]
 	set dx [lindex $v 0]
 	set dy [lindex $v 1]
 	set cc [lindex $v 2]
-	# ...Farbpalette
-	set bmp [lindex $v [expr 3 + $cc]]
-	set colors {}
+
 	for {set i 0} {$i < $cc} {incr i} {
-		set colors [lappend colors [lindex $v [expr 3 + $i]]]
-	}
-	# ...und Pixel mit entsprechender Farbe ausgeben
+ 		set c [lindex $v [expr 3 + $i]]
+		# c --> $:#717171
+ 		set c [split $c ":"]
+ 		set key [lindex $c 0]
+ 		set col [lindex $c 1]
+ 		set color($key) $col
+ 	}
+	# Debug...
+#     foreach {key value} [array get color] {
+# 		puts "|$key| $value"
+# 	}
+	set bmp [lindex $v [expr 3 + $cc]]
 	set px 0
 	set py 0
 	foreach p [split $bmp ""] {
@@ -285,15 +330,17 @@ proc set_bitmap_10c {bmp sock} {
 			incr py
 			set px 0
 		}
-		#puts "px: $px; py: $py; p: $p"
-		set_pixel_intern $px $py $p $colors
+		set_pixel_intern_xpm $version $px $py $color($p)
 		incr px
 	}
 }
 
+
 # **************************************
 # **************************************
 # **************************************
+
+# Matrix zeichnen
 gui_init
 
 # sicherer Interpreter...
@@ -302,8 +349,7 @@ set si [interp create -safe]
 $si alias clear clear
 $si alias get_xy get_xy
 $si alias set_pixel set_pixel
-$si alias set_bitmap set_bitmap
-$si alias set_bitmap_10c set_bitmap_10c
+$si alias set_bitmap_xpm set_bitmap_xpm
 
 
 # TCP/IP-Kommunikationskanal oeffnen und dort lauschen
