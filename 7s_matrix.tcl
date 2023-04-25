@@ -97,7 +97,7 @@ proc 7s_init {x y r c} {
 						-caps round\
 						-width $gvar(segm_width)\
 						-fill $gvar(segm_off)\
-						-tags [list digit_00$digit_idx digitv1_10$digit_idx digit]
+						-tags [list digitv2_00$digit_idx digitv1_10$digit_idx digit]
 	# Segment g
 	.matrix create line	[expr $x + 2 * $gvar(bd) + $gvar(segm_dx)]\
 						[expr $y + $gvar(bd) + $gvar(segm_length) + 2* $gvar(segm_dx)]\
@@ -106,7 +106,7 @@ proc 7s_init {x y r c} {
 						-caps round\
 						-width $gvar(segm_width)\
 						-fill $gvar(segm_off)\
-						-tags [list digit_02$digit_idx digitv1_12$digit_idx digit]
+						-tags [list digitv2_02$digit_idx digitv1_12$digit_idx digit]
 	# Segment d
 	.matrix create line	[expr $x + 1 * $gvar(bd) + $gvar(segm_dx)]\
 						[expr $y + $gvar(bd) + 2 * $gvar(segm_length) + 4* $gvar(segm_dx)]\
@@ -115,7 +115,7 @@ proc 7s_init {x y r c} {
 						-caps round\
 						-width $gvar(segm_width)\
 						-fill $gvar(segm_off)\
-						-tags [list digit_04$digit_idx digitv1_14$digit_idx digit]
+						-tags [list digitv2_04$digit_idx digitv1_14$digit_idx digit]
 	# Segment b
 	.matrix create line	[expr $x + 3 * $gvar(bd) + $gvar(segm_length) + 2 * $gvar(segm_dx)]\
 						[expr $y + $gvar(bd) + $gvar(segm_dx)]\
@@ -124,7 +124,7 @@ proc 7s_init {x y r c} {
 						-caps round\
 						-width $gvar(segm_width)\
 						-fill $gvar(segm_off)\
-						-tags [list digit_11$digit_idx digitv1_21$digit_idx digit]
+						-tags [list digitv2_11$digit_idx digitv1_21$digit_idx digit]
 	# Segment f
 	.matrix create line	[expr $x + 3 * $gvar(bd)]\
 						[expr $y + $gvar(bd) + $gvar(segm_dx)]\
@@ -133,7 +133,7 @@ proc 7s_init {x y r c} {
 						-caps round\
 						-width $gvar(segm_width)\
 						-fill $gvar(segm_off)\
-						-tags [list digit_01$digit_idx digitv1_01$digit_idx digit]
+						-tags [list digitv2_01$digit_idx digitv1_01$digit_idx digit]
 	# Segment c
 	.matrix create line	[expr $x + 2 * $gvar(bd) + $gvar(segm_length) + 2 * $gvar(segm_dx) - $gvar(segm_dx)/4]\
 						[expr $y + $gvar(bd) + $gvar(segm_length) + 3 * $gvar(segm_dx)]\
@@ -142,7 +142,7 @@ proc 7s_init {x y r c} {
 						-caps round\
 						-width $gvar(segm_width)\
 						-fill $gvar(segm_off)\
-						-tags [list digit_13$digit_idx digitv1_23$digit_idx digit]
+						-tags [list digitv2_13$digit_idx digitv1_23$digit_idx digit]
 	# Segment e
 	.matrix create line	[expr $x + 2 * $gvar(bd) - $gvar(segm_dx)/4]\
 						[expr $y + $gvar(bd) + $gvar(segm_length) + 3 * $gvar(segm_dx)]\
@@ -151,7 +151,7 @@ proc 7s_init {x y r c} {
 						-caps round\
 						-width $gvar(segm_width)\
 						-fill $gvar(segm_off)\
-						-tags [list digit_03$digit_idx digitv1_03$digit_idx digit]
+						-tags [list digitv2_03$digit_idx digitv1_03$digit_idx digit]
 	# Segment p
 	.matrix create line	[expr $x + 3 * $gvar(bd) + $gvar(segm_length) + 2 * $gvar(segm_dx)]\
 						[expr $y + $gvar(bd) + 2 * $gvar(segm_length) + 4 * $gvar(segm_dx)]\
@@ -160,7 +160,7 @@ proc 7s_init {x y r c} {
 						-caps round\
 						-width $gvar(segm_width)\
 						-fill $gvar(segm_off)\
-						-tags [list digit_14$digit_idx digit]
+						-tags [list digitv2_14$digit_idx digit]
 }
 
 # **********************************************************************
@@ -194,9 +194,9 @@ proc accept {sock addr port} {
 }                                   
 
 # **********************************************************************
-# intern
+#  Server-Kommando --> ein Pixel innerhalb der Matrix setzen
 #
-proc set_pixel_intern_xpm {version x y color} {
+proc set_pixel {version x y color sock} {
 	# Berechnung Digit
 	if {$version == 1} {
 		# Berechnung Digit
@@ -205,6 +205,7 @@ proc set_pixel_intern_xpm {version x y color} {
 		# Berechnung relative Koordinate im Digit
 		set dx [expr $x % 3]
 		set dy [expr $y % 5]
+		set vstr_ "v1_"
 	} else {
 		# Berechnung Digit
 		set r [expr $y / 5]
@@ -212,12 +213,14 @@ proc set_pixel_intern_xpm {version x y color} {
 		# Berechnung relative Koordinate im Digit
 		set dx [expr $x % 2]
 		set dy [expr $y % 5]
+		set vstr_ "v2_"
 	}
 	
 	# ...warum r und c zu oben vertauscht...?
 	set digit_idx [expr 100 * $c + $r]
 	# berechnetes Segment nach color setzen
-	.matrix itemconfigure digit_$dx$dy$digit_idx -fill $color
+	.matrix itemconfigure digit$vstr_$dx$dy$digit_idx -fill $color
+	#puts "digit$vstr_$dx$dy$digit_idx"
 }
 
 # **********************************************************************
@@ -231,14 +234,14 @@ proc receive {sock addr port} {
 	} else {
 		puts "-> Receive from connection ($addr/$port/$sock): $line"
 		set cmd [lindex $line 0]
-		puts "-> Command receive: $cmd"
+		#puts "-> Command receive: $cmd"
 		if {$line != ""} {
 			# Kommando im sicheren Interpreter ausfuehren
  			if {[catch {$si eval $line $sock}]} {
  				puts "--> cmd not secure!"
  			}
  			# Debug (empf. Kommandos ohne sicheren Interpreter ausfuehren)
-			#~ eval $line $sock
+			#eval $line $sock
 		}
 	}
 }
@@ -262,14 +265,6 @@ proc get_xy {version sock} {
 proc clear {sock} {
 	global gvar
 	.matrix itemconfigure digit -fill $gvar(segm_off)
-}
-
-
-# **********************************************************************
-# Server-Kommando --> ein Pixel innerhalb der Matrix setzen
-#
-proc set_pixel {version x y color sock} {
-	set_pixel_intern_xpm $version $x $y $color
 }
 
 # **********************************************************************
@@ -330,7 +325,7 @@ proc set_bitmap_xpm {version xpm sock} {
 			incr py
 			set px 0
 		}
-		set_pixel_intern_xpm $version $px $py $color($p)
+		set_pixel $version $px $py $color($p) $sock
 		incr px
 	}
 }

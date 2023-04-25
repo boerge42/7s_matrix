@@ -48,6 +48,48 @@ proc send_cmd {cmd} {
 
 
 # **************************************
+
+
+# **************************************
+# Lines via Bresenham
+# https://rosettacode.org/wiki/Bitmap/Bresenham%27s_line_algorithm#Tcl
+#
+proc abs {v} {
+	if {$v < 0} {
+		return [expr $v * -1]
+	} else {
+		return $v
+	}
+}
+
+proc drawLine {version point0 point1 color} {
+    lassign $point0 x0 y0
+    lassign $point1 x1 y1
+    set steep [expr [abs [expr $y1 - $y0]] > [abs [expr $x1 - $x0]]]
+    if {$steep} {
+        lassign [list $x0 $y0] y0 x0
+        lassign [list $x1 $y1] y1 x1
+    }
+    if {$x0 > $x1} {
+        lassign [list $x0 $x1] x1 x0
+        lassign [list $y0 $y1] y1 y0
+    }
+    set deltax [expr $x1 - $x0]
+    set deltay [abs [expr $y1 - $y0]]
+    set error [expr $deltax / 2]
+    set ystep [expr {$y0 < $y1 ? 1 : -1}]
+    for {set x $x0; set y $y0} {$x <= $x1} {incr x} {
+		set points [expr {$steep ? [list $y $x] : [list $x $y]}]
+		send_cmd [list set_pixel $version [lindex $points 0] [lindex $points 1] $color]
+        incr error -$deltay
+        if {$error < 0} {
+            incr y $ystep
+            incr error $deltax
+        }
+    }
+}
+
+# **************************************
 # **************************************
 # **************************************
 
@@ -75,14 +117,23 @@ send_cmd clear
 set dx [expr $gvar(digit_px)]
 set dy [expr $gvar(digit_py)]
 
-
 # ein paar Striche
-for {set x 0} {$x < $dx} {incr x} {
-	# diagonal
-    send_cmd [list set_pixel $version $x $x gray98]
-    send_cmd [list set_pixel $version $x [expr $dy - $x] gray98]
-	# waagerecht
-    send_cmd [list set_pixel $version $x [expr $dy / 2] gray98]
-	# senkrecht
-    send_cmd [list set_pixel $version [expr $dy / 2] $x gray98]
-}
+set p0 [list 0 0]
+set p1 [list [expr $dx - 1] [expr $dy - 1]]
+drawLine $version $p0 $p1 white
+#
+set p0 [list 0 [expr $dy - 1]]
+set p1 [list [expr $dx - 1] 0]
+drawLine $version $p0 $p1 yellow
+#
+set p0 [list 0 [expr $dy - 1]]
+set p1 [list [expr $dx - 1] 0]
+drawLine $version $p0 $p1 yellow
+#
+set p0 [list 0 [expr $dy / 2]]
+set p1 [list [expr $dx - 1] [expr $dy / 2]]
+drawLine $version $p0 $p1 blue
+#
+set p0 [list [expr $dx / 2] 0]
+set p1 [list [expr $dx / 2] [expr $dx - 1]]
+drawLine $version $p0 $p1 red
