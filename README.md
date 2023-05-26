@@ -3,7 +3,7 @@
 Ich wollte schon immer mal wissen, wie man solche Bilder auf einer [Matrix aus 7-Segement-Anzeigen](https://willga.llia.io/sea-of-segments/) generiert! Beim Herumexperimentieren sind einige Software-Simulatoren in Tcl und Python entstanden...
 
 
-##Tcl-Versionen (Unterverzeichnis: Tcl/)
+## Tcl-Versionen (Unterverzeichnis: Tcl/)
 
 Der hier vorgestellte Simulator (**[7s_matrix.tcl](Tcl/7s_matrix.tcl)**) ist ein, in TCL geschriebener, TCP/IP-Server, welcher eine solche 7-Segment-Anzeigen-Matrix aufbaut/anzeigt und auf rudimentäre Zeichen-Kommandos (get_xy, clear, set_pixel, set_bitmap_xpm) reagiert. Was diese Kommandos (mit ihren entsprechenden Parametern) bewirken, ist dem Quelltext von [**7s_matrix.tcl**](Tcl/7s_matrix.tcl) zu entnehmen!
 
@@ -15,7 +15,7 @@ Zum Testen des Tcl-Matrix-Servers wurden einige Tcl-Clients ([7s_client1.tcl](Tc
 <img src="Tcl/7s_matrix_client4.png" width="600"/>
 
 
-##Python-Versionen (Unterverzeichnis: Python/)
+## Python-Versionen (Unterverzeichnis: Python/)
 
 Die Python-Version des Simulators (**[7s_matrix.py](Pathon/7s_matrix.py)**) stellt prinzipiell die gleichen Zeichenfunktionen wie die Tcl-Version zur Verfügung. Unterschied ist, dass die Kommunikation zwischen Client (Bsp. **[7s_client1.py](Python/7s_client1.py)**) und Server (**[7s_matrix.py](Python/7s_matrix.py)**) über eine [Named Pipe](https://en.wikipedia.org/wiki/Named_pipe) stattfindet.
 
