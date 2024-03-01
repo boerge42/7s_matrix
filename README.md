@@ -32,7 +32,7 @@ Die Python-Versionen des Simulators sind eigentlich nur aus mangelnder Performan
 
 "Höhepunkt" des darauf folgenden Tunnings ist die [pygame](https://www.pygame.org/docs/)/[opencv](https://en.wikipedia.org/wiki/OpenCV)-Version des Simulators (**[7s_matrix_cam_pygame.py](Simulator/Python/7s_matrix_cam_pygame.py)**), welche die Frames einer, am PC, angeschlossenen Web-Cam online und in ausreichender/angenehmener Geschwindigkeit darstellen kann:
 
-<img src="Simulator/Python/python_cam.png" width="600"/>
+<img src="Python/python_cam.png" width="600"/>
 
 
 ## Hardware-Matrix
