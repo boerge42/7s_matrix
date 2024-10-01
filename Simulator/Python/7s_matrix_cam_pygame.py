@@ -17,10 +17,13 @@
 #  Aufruf-Parameter
 #  ----------------
 #
-#   -v <1|2> (default 2)  --> Matrixversion
-#   -x <num> (default 50) --> Anzahl 7s-Digits in x-Richtg.
-#   -y <num> (default 25) --> Anzahl 7s-Digits in y-Richtg.
-#   -d <num> (default 0)  --> Video-Device (Cam)
+#   -v <1|2> (default 2)        --> Matrixversion
+#   -x <num> (default 50)       --> Anzahl 7s-Digits in x-Richtg.
+#   -y <num> (default 25)       --> Anzahl 7s-Digits in y-Richtg.
+#   -m <num> (default 0)        --> Farbmode: 0:RGB; 1:s/w
+#   -c <num> (default ff0000)   --> wenn Farbmode=1, dann RGB-Farbe der LEDs
+#                                   (hex aber ohne vorangestellten 0x, #, etc.)
+#   -d <num> (default 0)        --> Video-Device (Cam)
 #
 #
 #
@@ -79,12 +82,14 @@ matrix = []
 matrix_version  = "v2"
 digit_dx        = 50
 digit_dy        = 25
+color_mode      = 0
+led_color       = (255, 0, 0)
 video_device    = 0
 
 # Optionen auswerten
 argv = sys.argv[1:]
 try:
-    opts, args = getopt.getopt(argv, "hv:x:y:d:")
+    opts, args = getopt.getopt(argv, "hv:x:y:d:m:c:")
 except getopt.GetoptError as err:
     print(err, " --> see the source code!")
     exit()
@@ -101,6 +106,10 @@ for opt, arg in opts:
         digit_dy = int(arg)
     elif opt in ['-d']:
         video_device = int(arg)
+    elif opt in ['-m']:
+        color_mode = int(arg)
+    elif opt in ['-c']:
+        led_color = tuple(int(arg[i:i+2], 16) for i in (0, 2, 4))
     elif opt in ['-h']:
         print("--> possible options can be found in the source code!")
         exit()
@@ -168,6 +177,7 @@ print ("pixel (xy)  : ", digit_px, digit_py)
 
 # ein paar Farben
 black = (0, 0, 0)
+gray8 = (20, 20, 20)
 white = (255, 255, 255)
     
 # ***********************************************************************************************************
@@ -252,7 +262,12 @@ while display_cam:
     # Video-Device einen Frame auslesen
     ret, frame = cam.read()
     img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    
+    if color_mode != 0:
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        img = cv2.medianBlur(img, 5)
+        # ...threshold for white...
+        (thresh, img) = cv2.threshold(img, 63, 50, cv2.THRESH_BINARY)    
+
     # resize Cam-Image...
     fy, fx = (digit_py/img.shape[0], digit_px/img.shape[1])
     # Seitenverhaeltnis Cam-Bild beibehalten?
@@ -267,15 +282,21 @@ while display_cam:
     img_resize = cv2.flip(img_resize, 1)
 
     # Matrix neu zeichnen
-    #screen.fill(black)
     for p in matrix:
         x, y = p[0]
         start = p[1]
         end = p[2]
         try:   # wg. aspect_ratio = True, dann ist Bild u.U. kleiner als Matrix (...eventuell schon beim Aufbau der Matrix-Liste beruecksichtigen?)
-            color = (img_resize[y, x][0], img_resize[y, x][1], img_resize[y, x][2])
+            if color_mode == 0:
+                color = (img_resize[y, x][0], img_resize[y, x][1], img_resize[y, x][2])
+            else:
+                if img_resize[y, x] > 0:
+                    color=led_color
+                else:
+                    color=gray8
         except:
             color=black
+        
         pygame.draw.line(screen, color, start, end, segm_width)
         
     
