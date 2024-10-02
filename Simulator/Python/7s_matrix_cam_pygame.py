@@ -1,8 +1,8 @@
 # **********************************************************************
 #  
-#  7s-Matrix (Python-Version)
-#  ==========================
-#      Uwe Berger; 2023
+#  7s-Matrix-Live-Kamera (Python-Version)
+#  ======================================
+#         Uwe Berger; 2023, 2024
 #
 #
 #  ...Live-Cam auf Matrix darstellen
@@ -16,7 +16,6 @@
 #
 #  Aufruf-Parameter
 #  ----------------
-#
 #   -v <1|2> (default 2)        --> Matrixversion
 #   -x <num> (default 50)       --> Anzahl 7s-Digits in x-Richtg.
 #   -y <num> (default 25)       --> Anzahl 7s-Digits in y-Richtg.
@@ -26,6 +25,12 @@
 #   -d <num> (default 0)        --> Video-Device (Cam)
 #
 #
+#  Tastatur
+#  --------
+#  q --> Programmende
+#  bei Farbmode=1:
+#       Pfeil links  --> threshold-Wert - 1
+#       Pfeil rechts --> threshold-Wert + 1
 #
 #
 #  Pixel-Koordinaten
@@ -85,6 +90,8 @@ digit_dy        = 25
 color_mode      = 0
 led_color       = (255, 0, 0)
 video_device    = 0
+
+threshold_value = 60
 
 # Optionen auswerten
 argv = sys.argv[1:]
@@ -217,41 +224,52 @@ for digit_y in range(digit_dy):
                     matrix.append([(px, py), (start_x, start_y), (end_x, end_y)])
 
 
-#print(time.time() - start_time)
 print("count pixel :   ", len(matrix))
 
 # pygame initialisieren etc.
 pygame.init()
 screen = pygame.display.set_mode((win_dx, win_dy+status_txt_dy))
 pygame.display.set_caption("7s-Matrix-Cam")
-#clock = pygame.time.Clock()
-
+clock = pygame.time.Clock()
 font = pygame.font.SysFont(None, 30)
-
+pygame.key.set_repeat(1, 500)
 
 # Video-Device
 cam = cv2.VideoCapture(video_device)
 
 display_cam = True
 
+# Text muss nicht in jedem Durchlauf aktualisiert werden...
 txt_refresh = 10
 txt_refresh_counter= 0
+
 time_sum = 0
 start_time = time.time()
 
 while display_cam:
 
-    # Quit Endlosloop
+    # auf ein paar Events reagieren
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             display_cam = False
-            print("Quit 7s-Matrix-Cam")
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_LEFT:
+                if threshold_value > 0:
+                    threshold_value = threshold_value - 1
+            elif event.key == pygame.K_RIGHT:
+                if threshold_value < 255:
+                    threshold_value = threshold_value + 1
+            elif event.key == pygame.K_q:
+                display_cam = False
             
     # ein wenig Performence-Messung
     if txt_refresh_counter > txt_refresh:
         txt_refresh_counter = 0
         pygame.draw.rect(screen, black, (0, win_dy, win_dx, win_dy+status_txt_dy))
-        text = font.render(f"{int(1/(time_sum/txt_refresh))} frames/s by {digit_px}x{digit_py} ({len(matrix)}) Pixel ", True, white)
+        if color_mode == 0:
+            text = font.render(f"{int(1/(time_sum/txt_refresh))} frames/s by {digit_px}x{digit_py} ({len(matrix)}) Pixel", True, white)
+        else:
+            text = font.render(f"{int(1/(time_sum/txt_refresh))} frames/s by {digit_px}x{digit_py} ({len(matrix)}) Pixel; ThresHoldValue={threshold_value}", True, white)
         screen.blit(text, (20, win_dy + 10))
         time_sum = 0
     else:
@@ -261,12 +279,13 @@ while display_cam:
 
     # Video-Device einen Frame auslesen
     ret, frame = cam.read()
-    img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    if color_mode != 0:
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # ...und ein wenig an den Farben rumrechnen
+    if color_mode == 0:
+        img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    else:
+        img = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         img = cv2.medianBlur(img, 5)
-        # ...threshold for white...
-        (thresh, img) = cv2.threshold(img, 63, 50, cv2.THRESH_BINARY)    
+        (thresh, img) = cv2.threshold(img, threshold_value, 255, cv2.THRESH_BINARY)    
 
     # resize Cam-Image...
     fy, fx = (digit_py/img.shape[0], digit_px/img.shape[1])
@@ -296,17 +315,9 @@ while display_cam:
                     color=gray8
         except:
             color=black
-        
         pygame.draw.line(screen, color, start, end, segm_width)
-        
     
     pygame.display.update()
-
-    #clock.tick(60)
+    clock.tick(60)
     
 pygame.quit()
-    
-
-
-
-
